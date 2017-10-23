@@ -12,7 +12,7 @@ First attempt at a Python3 version.
 
 Currently succeeds to obtain authenticity_token and to login using this token.
 
-It then 
+It then
 - downloads the appropriate course page
 - downloads each 'week' page for the course
 - downloads each 'step' page for each week of the course
@@ -27,9 +27,26 @@ This is simply a template for calling futurelearn-dl.py.
 
 Put your email, password and course_id as arguments within this file
 
+## config_example.ini
+
+This is an example config file to store your:
+- username
+- password
+- directory to save courses to
+
+It allows you to use the script without providing user data on each run.
+
+If you'd like to use a config file, duplicate `config_example.ini` as `config.ini` and replace placeholders with your data.
+
 ## Usage:
-'''
+
+Without config data:
+
     futurelearn-dl.py <username> <password> <course_id> <course_run>[<week_num>]
+
+With config data:
+
+    futurelearn-dl.py <course_id> <course_run>[<week_num>]
 
 e.g.
 
@@ -40,8 +57,7 @@ for run 1 of data-to-insight
 or to get just week1:
 
     futurelearn-dl.py  user password data-to-insight 1 1
-   
-'''
+
 
 **Note**: To override the temp file directory
     export TMP_DIR=/tmp
@@ -56,4 +72,3 @@ or to get just week1:
 - Fix unicode errors
 - Extend to more download types
 - Lots more ...
-

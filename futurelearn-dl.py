@@ -3,6 +3,7 @@
 import sys, os, errno
 import requests
 import json
+import configparser
 
 '''
     Author: Michael Bright, @mjbright
@@ -40,7 +41,7 @@ WEEK_NUM = -1 # Select all weeks unless specified on command-line
 DOWNLOAD_TYPES = [ 'html', 'pdf', 'mp4', 'mp3' ]
 for d in range(len(DOWNLOAD_TYPES)):
     DOWNLOAD_TYPES[d] = DOWNLOAD_TYPES[d].lower()
-    
+
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.62 Safari/537.36',
@@ -154,12 +155,12 @@ def getToken(session, url):
 
     if vpos == -1:
         fatal("getToken: No value in authenticity_token in response")
-    
+
     token_pos = apos + vpos + len("value=") + 1
     close_quote_pos = token_pos + content[token_pos:].find('"')
-    
+
     debug(2, "authenticity_token at pos {} -> {} in response.content".format(token_pos, close_quote_pos))
-    
+
     token=content[ token_pos: close_quote_pos ]
     debug(4, "Got authenticity_token '{}' [len {}]".format(token, len(token)))
 
@@ -299,7 +300,7 @@ def downloadURLsInPage(course_id, week_id, step_id, week_num, content, DOWNLOAD_
                 #print(str(urls))
                 #fatal("END")
             return urls
-       
+
         debug(4, "FOUND {} at mpos={}".format(DOWNLOAD_TYPE, str(mpos)))
         pos += mpos
 
@@ -397,7 +398,7 @@ def downloadURLToFile(url, file, DOWNLOAD_TYPE):
     tmpfile=file
     if OP_DIR in file:
         tmpfile=file[len(OP_DIR)+1:]
-    
+
     debug(1, "Downloading url<{}>\n\tto file <{}> ...".format(url, tmpfile))
 
     # No user-agent: had some failures in this case when specifying user-agent ...
@@ -412,7 +413,7 @@ def downloadURLToFile(url, file, DOWNLOAD_TYPE):
     if "The request signature we calculated" in response.content.decode('utf8', 'ignore'):
         print("Skipping bad content for file <{}> - may not be available yet".format(file))
         return
-        
+
     debug(2, "Writing content to <{}>".format(file))
     writeBinaryFile(file, response.content)
     #fatal("STOP")
@@ -422,14 +423,14 @@ def downloadURLInPage(url, download_dir, DOWNLOAD_TYPE, page_title):
         return
 
     mkdir_p(download_dir)
-    
+
     #filename = course_id + '-' + title
     filename = title
 
     if DOWNLOAD_TYPE == 'mp4' or DOWNLOAD_TYPE == 'mp3':
         # We need to create an 'x.mp4' filename from the url of the form
         #    'https://view.vzaar.com/2088434/video':
-        
+
         # Let's strip of the /video at the end:
         urlUptoNumber = url [ :url.rfind('/video') ]
 
@@ -486,7 +487,7 @@ def getCourseWeekPage(course_id, week_id):
     while MATCH in current[pos:]:
         pos += current[pos:].find(MATCH)
         info = current[ pos-10 : pos + 20 ]
-    
+
         section_pos = current[pos:].find(SECTION_MATCH)
         if section_pos == -1:
             link_section=""
@@ -526,7 +527,7 @@ def getCourseWeekPage(course_id, week_id):
         ipos = pos + len(MATCH)
         stepid = getInteger(current, ipos)
         # current = current[pos+6:]; pos=0
-   
+
         if not stepid in steps_seen and not stepid == '':
             link_title = link_title.replace(' ', '-')
             titles_seen.append(link_title)
@@ -580,17 +581,20 @@ def getCoursePage(course_id):
 
 
 ## -- Main: --------------------------------------------------------
+config = configparser.ConfigParser()
+config.read(os.path.dirname(os.path.realpath(__file__)) + '/config.ini')
+directory = config['options']['directory'] if config['options']['directory'] else '/Education/FUTURELEARN'
 
 TMP_DIR = os.getenv('TMP_DIR', default='/tmp/FUTURELEARN_DL')
-OP_DIR  = os.getenv('OP_DIR',  default=os.getenv('HOME') + '/Education/FUTURELEARN')
+OP_DIR  = os.getenv('OP_DIR',  default=os.getenv('HOME') + directory)
 
 debug(2, "Using temp   dir <{}>".format(TMP_DIR))
 debug(2, "Using Output dir <{}>".format(OP_DIR))
 
-email = sys.argv[1]
-password = sys.argv[2]
-course_id = sys.argv[3]
-course_run = int(sys.argv[4])
+email = config['user']['email'] if config['user']['email'] else sys.argv.pop(0)
+password = config['user']['password'] if config['user']['password'] else sys.argv.pop(0)
+course_id = sys.argv[1]
+course_run = int(sys.argv[2])
 
 COURSE_URL='https://www.futurelearn.com/courses/{}/{}/todo'.format(course_id, course_run)
 COURSE_STEP_URL='https://www.futurelearn.com/courses/{}/{}/steps'.format(course_id, course_run)
@@ -643,6 +647,3 @@ sys.exit(0)
 
 # RESPONSE methods:
 #['__attrs__', '__bool__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__iter__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__nonzero__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_content', '_content_consumed', 'apparent_encoding', 'close', 'connection', 'content', 'cookies', 'elapsed', 'encoding', 'headers', 'history', 'is_permanent_redirect', 'is_redirect', 'iter_content', 'iter_lines', 'json', 'links', 'ok', 'raise_for_status', 'raw', 'reason', 'request', 'status_code', 'text', 'url']
-
-
-
